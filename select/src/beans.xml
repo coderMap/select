@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd"
+>
+    <!-- beans.xml管理Spring框架 -->
+    <!-- 1.启动Sping注解 -->
+    <context:annotation-config />
+    <!-- 2.扫描 -->
+    <context:component-scan base-package="com.shxt">
+       
+    </context:component-scan>
+
+    <!--3.spring读取properties的属性文件 -->
+    <context:property-placeholder location="classpath:jdbc.properties" />
+    <!--4.配置数据源 -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <!--4.1.配置驱动类 -->
+        <property name="driverClassName" value="${mysql.driver}" />
+        <!--4.2.配置访问路径 -->
+        <property name="url" value="${mysql.url}" />
+        <!--4.3.配置用户名 -->
+        <property name="username" value="${mysql.username}" />
+        <!--4.4.配置密码 -->
+        <property name="password" value="${mysql.password}" />
+    </bean>
+
+    <!-- 5.创建SqlSessionFactory[接口]的实例 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!-- 注入配置数据源 -->
+        <property name="dataSource" ref="dataSource"></property>
+        <!-- 5.1.收回读取mybatis核心配置文件的权利 -->
+         
+        <!-- 5.2.收回读取映射文件的权利 -->
+        <property name="mapperLocations" value="classpath*:com/shxt/**/*Mapper.xml" />
+    </bean>
+    <!-- 6.自动创建接口模式的实现类 -->
+    <bean id="mapperScannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.shxt.**.dao" />
+        <!--r如果配置该项,你的dao前必须使用@Repository注解 -->
+        <property name="annotationClass" value="org.springframework.stereotype.Repository" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+    </bean>
+
+    <!-- 7.配置事务管理器：保证数据的完整性和一直行，是事务管理的具体实现 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+    <!-- 8.配置那些方法需要被事务管理器进行管理 -->
+    <tx:advice transaction-manager="transactionManager" id="serviceAdvice">
+        <tx:attributes>
+            <tx:method name="get*" read-only="true" />
+            <tx:method name="query*" read-only="true" />
+            <tx:method name="load*" read-only="true" />
+            <tx:method name="find*" read-only="true" />
+            <tx:method name="list*" read-only="true" />
+            <tx:method name="count*" read-only="true" />
+            <tx:method name="valid*" read-only="true" />
+            <tx:method name="check*" read-only="true" />
+            <tx:method name="select*" read-only="true" />
+            <tx:method name="login*" propagation="REQUIRED" />
+        </tx:attributes>
+    </tx:advice>
+
+    <!-- 9.通过AOP的配置，告知监控那个层次|| 切点（pointcut）每个类都拥有多个连接点||通知(Advice): 切面必须要完成的工作|||| -->
+    <aop:config>
+        <aop:pointcut expression="execution(* com.shxt..service.*Service.*(..))" id="servicePointCut" />
+        <aop:advisor advice-ref="serviceAdvice" pointcut-ref="servicePointCut" />
+    </aop:config>
+
+    <!-- 10.额外配置 (当使用注解方式时)||Spring中使用 AspectJ注解,支持 5 种类型的通知注解/@Before: 前置通知/@After: 后置通知/@AfterRunning: 返回通知/@AfterThrowing: 异常通知/@Around: 环绕通知/ -->
+    <aop:aspectj-autoproxy proxy-target-class="true" />
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />
+</beans>

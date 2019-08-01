@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shxt.framework.title.dao.TitleDao">
+    <!-- 基本的结果集映射 -->
+    <resultMap type="com.shxt.framework.title.model.Title" id="BaseResultMap" >
+        <id column="title_id" property="title_id"/>
+        <result column="title_name" property="title_name"/>
+        <result column="title_desc" property="title_desc"/>
+        <result column="teacher_id" property="teacher_id"/>
+        <result column="status" property="status"/>
+        <result column="student_id" property="student_id"/>
+        
+        <collection property="user" ofType="com.shxt.framework.user.model.User">
+        	<id column="user_id" property="user_id"/>
+        	<result column="user_name" property="user_name"/>
+        </collection>
+        <collection property="student" ofType="com.shxt.framework.student.model.Student">
+        	<id column="student_id" property="student_id"/>
+        	<result column="student_name" property="student_name"/>
+        </collection>
+    </resultMap>
+    
+  	<!--题目列表初始化  -->
+    <select id="list" parameterType="com.shxt.manager.model.Pager" resultMap="BaseResultMap">
+        SELECT
+            title.*,
+            user.user_id,user.user_name,
+            student.student_id,student.student_name
+        FROM
+            tb_title title
+        LEFT JOIN 
+        	tb_user user
+        ON 
+        	title.teacher_id=user.user_id
+        LEFT JOIN
+        	tb_student student
+        ON
+        	title.student_id=student.student_id
+        ORDER BY
+        user.user_id ASC
+        LIMIT ${offset},${pageSize}
+    </select>
+    <!-- 题目个数 -->
+    <select id="count" parameterType="com.shxt.manager.model.Pager" resultType="int">
+        SELECT 
+            COUNT(*)
+        FROM
+            tb_title
+    </select>
+    <!--新增用户 -->
+    <insert id="add" parameterType="com.shxt.framework.title.model.Title">
+        INSERT INTO 
+            tb_title (title_name,title_desc,teacher_id) 
+        VALUES
+          (#{title_name}, #{title_desc}, #{teacher_id})
+    </insert>
+    <!-- 验证题目名是否重复  -->
+    <select id="countTitleName" parameterType="string" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            tb_title
+        WHERE
+           title_name=#{title_name}
+    </select>
+    
+    <!--根据id获取题目信息-->
+    <select id="load" parameterType="int" resultMap="BaseResultMap">
+        SELECT
+            title.*,
+            user.user_id,user.user_name,
+            student.student_id,student.student_name
+        FROM
+            tb_title title
+        LEFT JOIN 
+        	tb_user user
+        ON 
+        	title.teacher_id=user.user_id
+        LEFT JOIN
+        	tb_student student
+        ON
+        	title.student_id=student.student_id
+        WHERE
+            title.title_id=#{title_id}
+    </select>
+    <!--更新,动态SQL语句的标准写法-->
+    <update id="update" parameterType="com.shxt.framework.title.model.Title">
+        UPDATE
+            tb_title
+        <set>
+            <if test="title_name != null and title_name !=''">
+                title_name=#{title_name},
+            </if> 
+            <if test="title_desc != null and title_desc !=''">
+                title_desc=#{title_desc},
+            </if>
+            <if test="teacher_id != null and teacher_id !=''">
+                teacher_id=#{teacher_id},
+            </if> 
+            <if test="student_id != null and student_id !=''">
+                student_id=#{student_id},
+            </if>    
+        </set>
+        WHERE
+            title_id=#{title_id}
+    </update>
+    <!-- 删除 -->
+    <delete id="delete" parameterType="com.shxt.framework.title.model.Title">
+        DELETE
+        FROM
+            tb_title
+        WHERE
+            title_id=#{title_id}
+    </delete>
+   
+    <!--获取用户全部未选择的题目-->
+    <select id="loadAllTitle" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+            tb_title
+       	WHERE
+       		student_id is null	
+    </select>
+    <!--通过老师账号查询题目  -->
+    <select id="loadByUserAccount" parameterType="String" resultMap="BaseResultMap">
+        SELECT
+            title.*,
+            user.user_id,user.user_name,
+            student.student_id,student.student_name
+        FROM
+            tb_title title
+        LEFT JOIN 
+        	tb_user user
+        ON 
+        	title.teacher_id=user.user_id
+        LEFT JOIN
+        	tb_student student
+        ON
+        	title.student_id=student.student_id
+        WHERE
+        	user.account=#{account}
+    </select>
+</mapper>

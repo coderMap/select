@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shxt.framework.user.dao.UserDao">
+    <!-- 基本的结果集映射 -->
+    <resultMap type="com.shxt.framework.user.model.User" id="BaseResultMap" >
+        <id column="user_id" property="user_id"/>
+        <result column="account" property="account"/>
+        <result column="password" property="password"/>
+        <result column="user_name" property="user_name"/>
+        <result column="status" property="status"/>
+        <result column="role_name" property="role_name"/>
+        <result column="class_id" property="class_id"/>
+        <result column="birthday" property="birthday"/>
+        <result column="sex" property="sex"/>
+        <result column="phone" property="phone"/>
+        <result column="address" property="address"/>
+        <result column="qq" property="qq"/>
+        
+        
+    </resultMap>
+    <!-- 提取SQL语句公共部分 -->
+    <sql id="oa_user_columns">
+        user_id,account,user_name,status,role_name,class_id
+    </sql>
+    <!-- 别名 -->
+    <sql id="oa_user_columns_alias">
+        ${alias}.user_id,${alias}.account,${alias}.user_name,${alias}.status,${alias}.role_name,${alias}.class_id
+    </sql>
+    <!-- id属性值必须和UserDao中的方法名对应 ,UserDao中参数可使用注解方式与where中需要查询的条件属性名对应,单参数大于一个是不能用parameterType指定参数类型 -->
+    <select id="login" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+            tb_user
+        WHERE
+            account=#{account}
+            AND
+            password=#{password}
+    </select>
+  	<!--2.用户列表Ajax完成数据的获取  -->
+    <select id="list" parameterType="com.shxt.manager.model.Pager" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+            tb_user
+        WHERE
+        	role_name='admin' OR role_name='manager'
+        ORDER BY
+        user_id ASC
+        LIMIT ${offset},${pageSize}
+    </select>
+    <!-- 总记录条数 -->
+    <select id="countUsers" parameterType="com.shxt.manager.model.Pager" resultType="int">
+        SELECT 
+            COUNT(*)
+        FROM
+            tb_user   
+        WHERE
+        	role_name='admin' OR role_name='manager'
+    </select>
+    <!-- 验证账号是否重复  -->
+    <select id="countAccount" parameterType="string" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            tb_user
+        WHERE
+           account=#{account}
+    </select>
+    <!--新增用户 -->
+    <insert id="add" parameterType="com.shxt.framework.user.model.User">
+        INSERT INTO 
+            tb_user (account,user_name,password,role_name) 
+        VALUES
+          (#{account}, #{user_name}, #{password}, "manager")
+    </insert>
+    <!--通过主键获取用户信息-->
+    <select id="load" parameterType="int" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+            tb_user
+        WHERE
+            user_id=#{user_id}
+    </select>
+    <!--用户信息更新,动态SQL语句的标准写法-->
+    <update id="update" parameterType="com.shxt.framework.user.model.User">
+        UPDATE
+            tb_user
+        <set>
+            <if test="account != null and account !=''">
+                account=#{account},
+            </if> 
+            <if test="user_name != null and user_name !=''">
+                user_name=#{user_name},
+            </if>     
+        </set>
+        WHERE
+            user_id=#{user_id}
+    </update>
+    <!-- 8.用户的逻辑删除 -->
+    <delete id="delete" parameterType="com.shxt.framework.user.model.User">
+        UPDATE
+            tb_user
+        SET
+            status=#{status}
+        WHERE
+            user_id=#{user_id}
+    </delete>
+    <!-- 9.查询口令 -->
+    <select id="selPassword" parameterType="int" resultType="string">
+        SELECT 
+            password
+        FROM
+            tb_user
+        WHERE
+            user_id=#{user_id}
+    </select>
+    <!-- 10.更新口令 -->
+    <update id="updPassword" parameterType="com.shxt.framework.user.model.User">
+        UPDATE
+            tb_user
+        SET
+            password=#{password}
+        WHERE
+            user_id=#{user_id}
+    </update>
+    <!--11.获取用户全部角色-->
+    <select id="loadAll" resultMap="BaseResultMap">
+        SELECT
+            distinct role_name
+        FROM
+            tb_user
+    </select>
+    <!-- 加载全部老师 -->
+    <select id="loadAllTeacher" resultMap="BaseResultMap">
+        SELECT
+            user_id,user_name
+        FROM
+            tb_user
+        Where 
+        	role_name='manager'
+    </select>
+    <!--添加学生的同时将学生信息添加到user表中，用于学生登陆-->
+    <insert id="addStudent" parameterType="com.shxt.framework.user.model.User">
+        INSERT INTO 
+            tb_user (account,user_name,password,role_name,class_name,phone,sex) 
+        VALUES
+          (#{account}, #{student_name}, #{password}, 'employee',#{class_name}, #{phone},#{sex})
+    </insert>
+</mapper>

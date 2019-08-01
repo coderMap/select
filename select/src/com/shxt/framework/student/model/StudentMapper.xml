@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shxt.framework.student.dao.StudentDao">
+    <!-- 基本的结果集映射 -->
+    <resultMap type="com.shxt.framework.student.model.Student" id="BaseResultMap" >
+        <id column="student_id" property="student_id"/>
+        <result column="account" property="account"/>
+        <result column="student_name" property="student_name"/>
+        <result column="password" property="password"/>
+        <result column="status" property="status"/>
+        <result column="role_name" property="role_name"/>
+        <result column="class_name" property="class_name"/>
+        <result column="phone" property="phone"/>
+        <result column="sex" property="sex"/>
+        
+        <collection property="title" ofType="com.shxt.framework.title.model.Title">
+        	<id column="title_id" property="title_id"/>
+        	<result column="title_name" property="title_name"/>
+        </collection>
+        
+        <collection property="user" ofType="com.shxt.framework.user.model.User">
+        	<id column="user_id" property="user_id"/>
+        	<result column="user_name" property="user_name"/>
+        </collection>
+        
+    </resultMap>
+   
+  	<!--学生列表  -->
+    <select id="list" parameterType="com.shxt.manager.model.Pager" resultMap="BaseResultMap">
+        SELECT
+            student.*,
+            title.title_id,title.title_name,
+            teacher.user_id,teacher.user_name
+        FROM
+            tb_student student
+        LEFT JOIN
+        	tb_title title
+        ON
+        	title.student_id=student.student_id
+        LEFT JOIN
+        	tb_user teacher
+        ON	
+        	teacher.user_id=title.teacher_id
+        LIMIT ${offset},${pageSize}
+    </select>
+    <!-- 总记录条数 -->
+    <select id="count" parameterType="com.shxt.manager.model.Pager" resultType="int">
+        SELECT 
+            COUNT(*)
+        FROM
+            tb_student
+    </select>
+    <!-- 验证账号是否重复  -->
+    <select id="countAccount" parameterType="string" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            tb_student
+        WHERE
+           account=#{account}
+    </select>
+    <!--新增用户 -->
+    <insert id="add" parameterType="com.shxt.framework.student.model.Student">
+        INSERT INTO 
+            tb_student (account,student_name,password,role_name,sex,phone,class_name,status) 
+        VALUES
+          (#{account}, #{student_name}, #{password}, "employee",#{sex},#{phone},#{class_name},"1")
+    </insert>
+    <!--通过主键获取学生信息-->
+    <select id="load" parameterType="int" resultMap="BaseResultMap">
+        SELECT
+            *
+        FROM
+            tb_student
+        WHERE
+            student_id=#{student_id}
+    </select>
+    <!--学生信息更新,动态SQL语句的标准写法-->
+    <update id="update" parameterType="com.shxt.framework.user.model.User">
+        UPDATE
+            tb_student
+        <set>
+            <if test="account != null and account !=''">
+                account=#{account},
+            </if> 
+            <if test="student_name != null and student_name !=''">
+                student_name=#{student_name},
+            </if>
+            <if test="sex != null and sex !=''">
+                sex=#{sex},
+            </if>
+            <if test="class_name != null and class_name !=''">
+                class_name=#{class_name},
+            </if> 
+            <if test="phone != null and phone !=''">
+                phone=#{phone},
+            </if>     
+        </set>
+        WHERE
+            student_id=#{student_id}
+    </update>
+    <!-- 8.用户的逻辑删除 -->
+    <delete id="delete" parameterType="com.shxt.framework.student.model.Student">
+        UPDATE
+            tb_student
+        SET
+            status=#{status}
+        WHERE
+            student_id=#{student_id}
+    </delete>
+    
+    <!-- 加载所有的班级 -->
+    <select id="loadAllClass" resultMap="BaseResultMap">
+        SELECT
+        DISTINCT 
+        	class_name
+        FROM 
+        	tb_student
+    </select>
+    <!-- 通过账号查询学生-->
+    <select id="loadByAccount" parameterType="String" resultMap="BaseResultMap">
+        SELECT
+            student.*,
+            title.title_id,title.title_name,
+            teacher.user_id,teacher.user_name
+        FROM
+            tb_student student
+        LEFT JOIN
+        	tb_title title
+        ON
+        	title.student_id=student.student_id
+        LEFT JOIN
+        	tb_user teacher
+        ON	
+        	teacher.user_id=title.teacher_id
+        WHERE
+            student.account=#{account}
+    </select>
+</mapper>
